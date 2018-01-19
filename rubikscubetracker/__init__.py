@@ -1071,7 +1071,7 @@ class RubiksOpenCV(object):
         #
         # Find the contours and create a CustomContour object for each...store
         # these in self.candidates
-        (contours, hierarchy) = cv2.findContours(dilated.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        (_trash, contours, hierarchy) = cv2.findContours(dilated.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         self.candidates = []
 
         if hierarchy is None:
@@ -1428,12 +1428,12 @@ class RubiksVideo(RubiksOpenCV):
         capture = cv2.VideoCapture(self.webcam)
 
         # Set the capture resolution
-        capture.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, width)
-        capture.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, height)
-        # capture.set(cv2.cv.CV_CAP_PROP_SATURATION, 0.10)
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        # capture.set(cv2.CAP_PROP_SATURATION, 0.10)
 
         # Create the window and set the size to match the capture resolution
-        cv2.namedWindow("Fig", cv2.cv.CV_WINDOW_NORMAL)
+        cv2.namedWindow("Fig", cv2.WINDOW_NORMAL)
         cv2.resizeWindow("Fig", window_width, window_height)
 
         while True:
@@ -1467,6 +1467,7 @@ class RubiksVideo(RubiksOpenCV):
             if self.save_colors and self.size and len(self.data.keys()) == (self.size * self.size):
                 self.total_data = merge_two_dicts(self.total_data, self.data)
                 log.info("Saved side %s, %d squares" % (self.name, len(self.data.keys())))
+                # log.info(self.data)
 
                 if self.size_static is None:
                     self.size_static = self.size
@@ -1501,16 +1502,17 @@ class RubiksVideo(RubiksOpenCV):
                     self.name = 'F'
                     self.index = 2
 
-                    with open('/tmp/webcam.json', 'w') as fh:
+                    with open('webcam.json', 'w') as fh:
+                        # print(self.total_data)
                         json.dump(self.total_data, fh, sort_keys=True, indent=4)
 
-                    cmd = ['rubiks-color-resolver.py', '--json', '--filename', '/tmp/webcam.json']
+                    cmd = ['rubiks-color-resolver.py', '--json', '--filename', 'webcam.json']
                     log.info(' '.join(cmd))
                     final_colors = json.loads(check_output(cmd).decode('ascii').strip())
                     final_colors['squares'] = convert_key_strings_to_int(final_colors['squares'])
                     #log.info("final_colors %s" % pformat(final_colors['squares']))
                     kociemba_string = final_colors['kociemba']
-                    #print(kociemba_string)
+                    print(kociemba_string)
 
                     colormap = {}
                     for (side_name, data) in final_colors['sides'].items():
@@ -1546,7 +1548,9 @@ class RubiksVideo(RubiksOpenCV):
                     else:
                         cv2.putText(self.image, "Calculating solution", (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
                         cv2.putText(self.image, "Video may freeze", (10, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1)
-                        cmd = "cd ~/rubiks-cube-NxNxN-solver/; ./usr/bin/rubiks-cube-solver.py --colormap '%s' --state %s" % (json.dumps(colormap), kociemba_string)
+                        # cmd = "cd /Users/alexanderzhao/Desktop/PROGRAMING/Cube/other's code/dwalton/rubiks-cube-NxNxN-solver/; python3 ./usr/bin/rubiks-cube-solver.py --colormap '%s' --state %s" % (json.dumps(colormap), kociemba_string)
+                        cmd = "python3 ./usr/bin/rubiks-cube-solver.py --state %s" % (kociemba_string)
+                        os.chdir("/Users/alexanderzhao/Desktop/PROGRAMING/Cube/other's code/dwalton/rubiks-cube-NxNxN-solver")
                         log.info(cmd)
                         output = check_output(cmd, shell=True)
 
@@ -1592,8 +1596,8 @@ class RubiksVideo(RubiksOpenCV):
             if not self.process_keyboard_input():
                 break
 
-            # Sleep 50ms for 20 fps
-            time.sleep(0.05)
+            # 40 fps
+            time.sleep(0.025)
 
         capture.release()
         cv2.destroyWindow("Fig")
